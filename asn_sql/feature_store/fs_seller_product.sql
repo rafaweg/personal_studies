@@ -17,8 +17,9 @@ ON
 WHERE
   t1.dtPurchase < '{date}'
   AND t1.dtPurchase >= add_months('{date}',-6)
-)
+),
 
+tb_summary AS (
 SELECT
   idSeller,
   avg(vlWeightGramas) AS vlAvgWeight,
@@ -63,3 +64,39 @@ FROM
   full_table
 GROUP BY
   idSeller
+),
+
+
+tb_seller_category AS (
+SELECT
+  idSeller,
+  descCategoryName,
+  count(*) AS qtCategory
+FROM
+  full_table
+GROUP BY
+  idSeller,
+  descCategoryName
+),
+
+tb_best_category AS (
+SELECT
+  *,
+  ROW_NUMBER() OVER (PARTITION BY idSeller ORDER BY qtCategory DESC) AS rankCategory
+FROM
+  tb_seller_category
+QUALIFY
+  rankCategory = 1
+)
+
+SELECT
+  t1.*,
+  t2.descCategoryName
+FROM
+  tb_summary t1
+LEFT JOIN
+  tb_best_category t2
+ON
+  t1.idSeller = t2.idSeller
+  
+
